@@ -1,0 +1,32 @@
+import os.path as osp
+
+f1 = open('/data/dataset/CFP/cfp-dataset/Protocol/Pair_list_F.txt','r')
+f2 = open('/data/dataset/CFP/cfp-dataset/Protocol/Pair_list_P.txt','r')
+
+fo1 = open('./fea_F.txt','w')
+fo2 = open('./fea_P.txt','w')
+root_dir = '/data/hjy1312/experiments/resnet34_cal_fea_cfp/fea_resnet34'
+
+for line in f1.readlines():
+    index,imgPath = line.strip().rstrip('\n').split(' ')
+    imgpath_split = imgPath.split('/')
+    dir1 = imgpath_split[-3]
+    dir2 = imgpath_split[-2]
+    pkl_name = imgpath_split[-1].split('.')[0] + '.pkl'
+    pkl_path = osp.join(root_dir,dir1,dir2,pkl_name)
+    if not osp.exists(pkl_path):
+        print('Error at %s' %(pkl_path))
+        exit(0)
+    fo1.writelines([pkl_path,'\n'])
+
+for line in f2.readlines():
+    index,imgPath = line.strip().rstrip('\n').split(' ')
+    imgpath_split = imgPath.split('/')
+    dir1 = imgpath_split[-3]
+    dir2 = imgpath_split[-2]
+    pkl_name = imgpath_split[-1].split('.')[0] + '.pkl'
+    pkl_path = osp.join(root_dir,dir1,dir2,pkl_name)
+    if not osp.exists(pkl_path):
+        print('Error at %s' %(pkl_path))
+        exit(0)
+    fo2.writelines([pkl_path,'\n'])

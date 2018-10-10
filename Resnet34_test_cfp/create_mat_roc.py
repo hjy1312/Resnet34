@@ -1,0 +1,103 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jun 19 22:14:58 2018
+
+@author: junyang
+"""
+import numpy as np
+import math
+import pickle
+import os
+import os.path as osp
+from scipy.io import savemat
+
+def cal_cosine_distance(a,b):
+    dot_product = np.sum(a*b)
+    norm_a = math.sqrt(np.sum(np.square(a)))
+    norm_b = math.sqrt(np.sum(np.square(b)))
+    cosine_similarity = float(dot_product) / (norm_a * norm_b)
+    return cosine_similarity
+
+f_src1 = open('fea_F.txt','r')
+F_fea = []
+for line in f_src1.readlines():
+    fea_path = line.strip().rstrip('\n')
+    F_fea.append(fea_path)
+
+f_src2 = open('fea_P.txt','r')
+P_fea = []
+for line in f_src2.readlines():
+    fea_path = line.strip().rstrip('\n')
+    P_fea.append(fea_path)
+    
+f_src1.close()
+f_src2.close()
+
+root_dir = '/data/dataset/CFP/cfp-dataset/Protocol/Split/'
+
+save_dir = './fea_cfp'
+if not osp.exists(save_dir):
+    os.makedirs(save_dir)
+for split in ['01','02','03','04','05','06','07','08','09','10']:
+    for s in ['FF','FP']:
+        cos_dis_set = []
+        mated_label_set = []
+        save_subdir = osp.join(save_dir,s,'verification_resnet34_split'+str(int(split)))
+        if not osp.exists(save_subdir):
+            os.makedirs(save_subdir)
+        src_dir0 = osp.join(root_dir,s)
+        src_dir = osp.join(src_dir0,split)
+        if s=='FF':
+            fea_set1 = F_fea
+            fea_set2 = F_fea
+        else:
+            fea_set1 = F_fea
+            fea_set2 = P_fea
+            
+        cnt = 0
+        f = open(osp.join(src_dir,'same.txt'),'r')
+        for line in f.readlines():
+            cnt += 1
+            print('match: %s, split: %s, index: %d' %(s,split,cnt))
+            ind1,ind2 = line.strip().rstrip('\n').split(',')
+            ind1,ind2 = int(ind1),int(ind2)
+            path1 = fea_set1[ind1-1]
+            path2 = fea_set2[ind2-1]
+            f1 = open(path1,'r')
+            f2 = open(path2,'r')
+            fea1 = pickle.load(f1)
+            fea1 = fea1['feature']
+            fea2 = pickle.load(f2)
+            fea2 = fea2['feature']
+            cos_dis = cal_cosine_distance(fea1,fea2)
+            cos_dis_set.append(cos_dis)
+            mated_label_set.append(1)
+            f1.close()
+            f2.close()
+        f.close()
+        f = open(osp.join(src_dir,'diff.txt'),'r')
+        for line in f.readlines():
+            cnt += 1
+            print('match: %s, split: %s, index: %d' %(s,split,cnt))
+            ind1,ind2 = line.strip().rstrip('\n').split(',')
+            ind1,ind2 = int(ind1),int(ind2)
+            path1 = fea_set1[ind1-1]
+            path2 = fea_set2[ind2-1]
+            f1 = open(path1,'r')
+            f2 = open(path2,'r')
+            fea1 = pickle.load(f1)
+            fea1 = fea1['feature']
+            fea2 = pickle.load(f2)
+            fea2 = fea2['feature']
+            cos_dis = cal_cosine_distance(fea1,fea2)
+            cos_dis_set.append(cos_dis)
+            mated_label_set.append(0)
+            f1.close()
+            f2.close()
+        f.close()
+        cos_dis_set = np.array(cos_dis_set)
+        mated_label_set = np.array(mated_label_set)
+        savemat(osp.join(save_subdir,'cosine_similarity.mat'),{'score':cos_dis_set})
+        savemat(osp.join(save_subdir,'mated_label.mat'),{'label':mated_label_set})
+        
